@@ -107,6 +107,8 @@ namespace Api_Connection
         }
 
 
+
+
         /// <summary>
         /// Checks the local network for all ips of available apis 
         /// Has the possibility to set part of the ip if it is known, to increase search speed
