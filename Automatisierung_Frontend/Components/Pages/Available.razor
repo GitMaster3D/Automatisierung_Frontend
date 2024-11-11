@@ -1,0 +1,71 @@
+﻿@page "/available"
+@rendermode InteractiveServer
+
+<PageTitle>ESP List</PageTitle>
+
+@using Api_Connection
+@inject ILogger<Available> Logger
+
+
+
+<h1>Overview</h1>
+
+
+@if (ips == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="container-fluid">
+        @foreach (var api in ips)
+        {
+            <div class="row">
+                <!-- Card -->
+                <div class="card text-white w-100 mb-3">
+                    <div class="card-body">
+                        <!-- card title -->
+                        <h5 class="card-title">
+                            @api
+                        </h5>
+
+
+                        <p class="card-text">
+                            Penis
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    string[] ips;
+
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        ips = API_Connection.GetLastScanned();
+
+        Thread t = new(() =>
+        {
+            Logger.LogWarning("Scanning...");
+
+            ips = API_Connection.NetworkScan(8000);
+
+            Logger.LogWarning("Finished Scan");
+
+            InvokeAsync(() =>
+            {
+                StateHasChanged();
+            });
+
+        });
+
+        t.Start();
+
+        StateHasChanged();
+    }
+}
