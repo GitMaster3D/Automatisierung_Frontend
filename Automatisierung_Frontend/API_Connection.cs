@@ -72,7 +72,11 @@ namespace Api_Connection
             using (HttpClient client = new HttpClient())
             {
                 var json = JsonConvert.SerializeObject(data); // Convert data to json
+                Console.WriteLine(json);
+
+
                 var response = await client.PostAsync(fullPath, new StringContent(json, Encoding.UTF8, "application/json"));
+
 
 
 
@@ -102,7 +106,7 @@ namespace Api_Connection
             {
                 var result = new string[lastFoundIps.Count];
                 lastFoundIps.CopyTo(result);
-                return result.Length > 0 ? result : null!;
+                return result;
             }
         }
 
@@ -116,7 +120,7 @@ namespace Api_Connection
         /// <returns>
         /// A list with all those ips
         /// </returns>
-        public static string[] NetworkScan(int targetPort)
+        public static string[] NetworkScan(int targetPort, out int found, string typeCNumber)
         {
             networkScanSemaphore.WaitOne();
 
@@ -125,23 +129,24 @@ namespace Api_Connection
                 lastFoundIps = foundIps;
                 foundIps = new();
 
-                string baseIp = GetLocalIPAddress();
                 string ip = "";
-                string subnet = baseIp.Substring(0, baseIp.LastIndexOf(".") + 1);
+                string baseIp = GetLocalIPAddress();
+                string subnet = baseIp.Substring(0, baseIp.LastIndexOf(".") + (typeCNumber == null ? 1 : -3));
+                subnet += typeCNumber ?? "";
+                subnet += ".";
 
 
                 List<Thread> threads = new(256); // Store refrences to all started threads
-
-
                 for (int i = 0; i < 256; i++)
                 {
-                    var bytes = BitConverter.GetBytes(i).Reverse().ToArray();
                     ip = subnet + i;
+
+                    Console.WriteLine(ip);
 
                     Thread t = new Thread(APICheck);
                     t.Start(ip);
 
-                    threads.Add(t);
+                    threads.Add(t);                    
                 }
 
                 // Sync
@@ -149,6 +154,7 @@ namespace Api_Connection
                     thread.Join();
 
                 lastFoundIps = foundIps;
+                found = foundIps.Count;
             }
 
 
@@ -172,13 +178,14 @@ namespace Api_Connection
         }
 
 
-
         static async void APICheck(object ip)
         {
             try
             {
                 if (Ping((string)ip))
                 {
+                    foundIps.Add((string)ip);
+
                     var isAvailable = await IsApiAvailable("http://" + ip + ":8000");
 
 
@@ -223,13 +230,25 @@ namespace Api_Connection
             {
                 try
                 {
-                    var reply = ping.Send(ip, 150);
+                    var reply = ping.Send(ip, 150000);
                     return reply.Status == IPStatus.Success;
                 }
                 catch (PingException)
                 {
                     return false;
                 }
+            }
+        }
+
+        public static PingReply Ping2(string ip)
+        {
+            using (Ping ping = new Ping())
+            {
+
+                
+
+                    var reply = ping.Send(ip, 150000);
+                    return reply;
             }
         }
         #endregion

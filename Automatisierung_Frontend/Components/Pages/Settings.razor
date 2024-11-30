@@ -1,0 +1,119 @@
+﻿@page "/Settings/ip={ip}/name={name}"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle> @name </PageTitle>
+
+
+<div class="container-fluid">
+		<div class="row">
+			<!-- Card -->
+			<div class="card text-white w-100 mb-3 text-start">
+				<div class="card-body">
+
+					<!-- card title and Remove Button -->
+					<div class="d-flex justify-content-between">
+						<h5  class="card-title">
+							@name
+						</h5>
+
+						<!-- Ip Label -->
+						<label class="text-secondary mx-3">
+							Ip: @ip
+						</label>
+					</div>
+
+					<br />
+					<br />
+					<table>
+						<tbody>
+							<tr>
+								<th>
+									Moisture @targetWateringData.TargetMoisture_Percentage%
+								</th>
+							</tr>
+
+							<tr>
+								<th>
+									Daily Litres @targetWateringData.TargetDailyWater_Liters l
+								</th>
+							</tr>
+
+						<tr>
+							<th>
+								Times
+								@foreach(var time in targetWateringData.DailyWateringTimes)
+								{
+									@time.ToString()
+								}
+							</th>
+						</tr>
+
+						<tr>
+							<th>
+								Mode @targetWateringData.Mode
+							</th>
+						</tr>
+					</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+</div>
+
+
+<EditForm Model="@targetWateringData" OnValidSubmit="SubmitDataUpdate" FormName="wateringData">
+	<label class="col-form-label-lg text-primary"> Settings </label>
+
+	<div class="m-1">
+		<label for="input">Target Moisture Percentage</label>
+		<input id="input" @bind="targetWateringData.TargetMoisture_Percentage" class="form-control" />
+		<span class="text-danger">@validationMessages["Validate"]</span>
+	</div>
+
+
+	<button type="submit" class="btn btn-primary m-1">Submit</button>
+</EditForm>
+
+
+@code
+{
+	[Parameter]
+	public string ip { get; set; } = "";
+	[Parameter]
+	public string name { get; set; } = "";
+
+	WateringData targetWateringData = new();
+	public Dictionary<string, string> validationMessages = new()
+	{
+		{ "Validate", "" }
+	};
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+	}
+
+	private void ChangeEvent(ChangeEventArgs e)
+	{
+		Console.WriteLine(e.Value);
+
+	}
+
+
+	private void SubmitDataUpdate()
+	{
+		if (targetWateringData.ValidateData())
+		{
+			validationMessages["Validate"] = "Invalid Settings!";
+			return;
+		}
+	}
+
+
+	private void SetData()
+	{
+		MessageConfigurator.UpdateWateringData(0, targetWateringData);
+	}
+}

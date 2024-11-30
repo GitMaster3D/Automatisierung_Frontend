@@ -4,35 +4,51 @@
 <PageTitle>ESP List</PageTitle>
 
 @using Api_Connection
+@using System.ComponentModel.DataAnnotations
+@using System.Text.RegularExpressions
+@using Newtonsoft.Json
+@using System.Net
+@using System.Net.Sockets
+@using System.Text
 @inject ILogger<Available> Logger
-
+@inject NavigationManager NavManager
 
 
 <h1>Overview</h1>
 
 
-@if (ips == null)
+@if (ipAmount < 0)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Nothing Found...</em></p>
 }
 else
 {
     <div class="container-fluid">
-        @foreach (var api in ips)
+        @foreach (var api in connections)
         {
             <div class="row">
                 <!-- Card -->
-                <div class="card text-white w-100 mb-3">
-                    <div class="card-body">
-                        <!-- card title -->
-                        <h5 class="card-title">
-                            @api
-                        </h5>
+                <div class="card text-white w-100 mb-3 text-start">
+                    <div class="card-body" @onclick="() => OpenSettings(api)">
+
+                        <!-- card title and Remove Button -->
+                        <div class="d-flex justify-content-between">
+                            <h5 @onclick:stopPropagation class="card-title">
+                                <input class="card-text btn-outline text-start input-group-lg btn" style="font-size: 25px" @bind-value="api.name"/>
+                            </h5>
+
+                            <button class="btn btn-outline-danger" @onclick:stopPropagation @onclick="() => RemoveIp(api)">
+                                <img src="/Images/rat-spinning-ezgif.com-resize.gif"/>
+                                <p style="position:absolute; transform: translate(15px, -40px);"> REMOVE </p>
+                            </button>
+                        </div>
 
 
-                        <p class="card-text">
-                            Penis
-                        </p>
+                        <!-- Ip Label -->
+                        <label @onclick:stopPropagation class="text-secondary mx-3">
+                            Ip: @api.ip
+                        </label>
+
                     </div>
                 </div>
             </div>
@@ -40,32 +56,191 @@ else
     </div>
 }
 
+<br />
+<br />
+<EditForm Model="@ipInput" OnValidSubmit="@HandleIpInputSubmit">
+
+    <label class="col-form-label-lg text-primary"> Target Ip </label>
+
+
+    <div class="m-1">
+        <label for="input">Ip:</label>
+        <input id="input" @bind="ipInput.ip" class="form-control" />
+        <span class="text-danger">@validationMessages["Ip"]</span>
+    </div>
+
+
+    <button type="submit" class="btn btn-primary m-1">Submit</button>
+    <button type="button" @onclick="FindRaspberryIp" class="btn btn-primary"> Detect </button>
+</EditForm>
+
+<br />
+<br />
+
+
 @code {
-    string[] ips;
+    ConnectionObject[] connections { get { return connections__.ToArray(); } set { connections__ = value.ToList(); ipAmount = connections__.Count; } }
+    List<ConnectionObject> connections__;
+    int ipAmount = -1;
+    IpInput ipInput = new();
+    private Dictionary<string, string> validationMessages = new Dictionary<string, string> 
+    { 
+        { "Ip", "" }
+    };
 
 
-
-    protected async override Task OnInitializedAsync()
+    private void OpenSettings(ConnectionObject obj)
     {
-        ips = API_Connection.GetLastScanned();
+        NavManager.NavigateTo($"/Settings/ip={obj.ip}/name={obj.name}");
+    }
 
-        Thread t = new(() =>
+
+
+    class ConnectionObject
+    {
+        public string ip = "";
+        [JsonIgnore] public string name { get { return name_; } set { name_ = value; OnNameChanged(); }}
+        const string folderName = "ConnectionObjects";
+
+        [JsonProperty] private string name_;
+
+
+        private void OnNameChanged()
         {
-            Logger.LogWarning("Scanning...");
+            Store();
+        }
 
-            ips = API_Connection.NetworkScan(8000);
 
-            Logger.LogWarning("Finished Scan");
+        public void Store()
+        {
+            FileManager.StoreAsJson(this, this.ip, folderName);
+        }
 
-            InvokeAsync(() =>
+
+        public void Delete()
+        {
+            FileManager.Delete(this.ip, "ConnectionObjects");
+        }
+
+
+        public static ConnectionObject[] LoadAll()
+        {
+            string[] fileNames = FileManager.GetAllFilenames(folderName);
+            ConnectionObject[] objects = new ConnectionObject[fileNames.Length];
+
+            for (int i = 0; i < fileNames.Length; i++)
             {
-                StateHasChanged();
-            });
+                objects[i] = Load(fileNames[i]);
+            }
 
-        });
+            return objects;
+        }
 
-        t.Start();
+        public static ConnectionObject Load(string name)
+        {
+            return (ConnectionObject)FileManager.GetObject<ConnectionObject>(name, folderName);
+        }
+    }
 
-        StateHasChanged();
+    class IpInput
+    {
+        public string ip { get; set; } = "";
+
+
+        public bool IsValidIp()
+        {
+            const string ValidIpRegexPattern = @"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$";
+
+            if (ip.Length == 0) return false;
+            return Regex.IsMatch(ip, ValidIpRegexPattern);
+        }
+    }
+
+    private void RemoveIp(ConnectionObject obj)
+    {
+        connections__.Remove(obj);
+        obj.Delete();
+    }
+
+
+    private void FindRaspberryIp()
+    {
+        CancellationTokenSource cancellationTokenSource = new();
+        var task = Task.Run(() => ListenForIPBroadcast(cancellationTokenSource.Token));
+        if (!task.Wait(TimeSpan.FromSeconds(10)))
+            cancellationTokenSource.Cancel();
+    }
+
+
+    /// <summary>
+    /// Keine sicherheitslücken hier zu erkennen, das
+    /// ist sicher und gut und gesund
+    /// </summary>
+    private void ListenForIPBroadcast(CancellationToken t)
+    {
+        t.ThrowIfCancellationRequested();
+        IpInput foundIp = new();
+        using (UdpClient udpServer = new UdpClient(1234))
+        {
+            while (true)
+            {
+                var remoteEP = new IPEndPoint(IPAddress.Any, 1234);
+                var data = udpServer.Receive(ref remoteEP);
+
+                foundIp.ip = Encoding.UTF8.GetString(data);
+
+                if (foundIp.IsValidIp())
+                {
+                    udpServer.Close();
+                    break;
+                }
+            }            
+        }
+
+        // Input the recieved Ip
+        ipInput = foundIp;
+        HandleIpInputSubmit();
+    }
+
+
+    Semaphore handleInputSemaphore = new(1, 1);
+    private void HandleIpInputSubmit()
+    {
+        handleInputSemaphore.WaitOne();
+
+        if (!ipInput.IsValidIp())
+        {
+            validationMessages["Ip"] = "Invalid Ipv4";
+            return;
+        }
+
+
+        ConnectionObject obj = new();
+        obj.ip = ipInput.ip;
+        obj.name = "New Connection";
+        connections = connections.Concat(new ConnectionObject[] { obj }).ToArray();
+
+        handleInputSemaphore.Release();
+    }
+
+
+    protected override void OnInitialized()
+    {
+        connections = ConnectionObject.LoadAll();
+        //connections.Concat(ConnectionObject.LoadAll());
+    }
+
+
+    // Test code, To be removed
+    private void TestSendProgram()
+    {
+        API_Connection.SetHost("10.1.182.31", 8000);
+
+        var data = new WateringData();
+        data.UseDailyAmount(0.3f);
+        data.SetDailyWateringTimes(new TimeOnly[] { new TimeOnly(12, 30, 0), new TimeOnly(22, 0, 0) });
+        data.ValidateData();
+
+        MessageConfigurator.UpdateWateringData(0, data);
     }
 }
