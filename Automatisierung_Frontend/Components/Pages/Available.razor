@@ -238,7 +238,7 @@ else
 
         var data = new WateringData();
         data.UseDailyAmount(0.3f);
-        data.SetDailyWateringTimes(new TimeOnly[] { new TimeOnly(12, 30, 0), new TimeOnly(22, 0, 0) });
+        data.SetDailyWateringTimes(new TimeSpan?[] { new TimeSpan(12, 30, 0), new TimeSpan(22, 0, 0) });
         data.ValidateData();
 
         MessageConfigurator.UpdateWateringData(0, data);

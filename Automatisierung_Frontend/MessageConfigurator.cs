@@ -44,7 +44,7 @@ public class WateringData
         private float TargetMoisturePercentage;
 
 	    public float TargetDailyWater_Liters { get; set; }
-        public TimeOnly[] DailyWateringTimes { get; set; } = new TimeOnly[0];
+        public List<TimeSpan?> DailyWateringTimes { get; set; } = new();
         public WateringMode Mode { get; set; } = WateringMode.Undefined;
 
 	    internal int TargetPump;
@@ -54,17 +54,17 @@ public class WateringData
         /// </summary>
         public bool ValidateData()
         {
-            return DailyWateringTimes.Length > 0 
-                && Mode != WateringMode.Undefined;
+            return Mode != WateringMode.Undefined
+                && ((Mode == WateringMode.Moisture) || (Mode == WateringMode.Amount && (DailyWateringTimes.Count > 0)));
         }
 
 
         /// <summary>
         /// Sets the times on wich water can be given at any day
         /// </summary>
-        public void SetDailyWateringTimes(TimeOnly[] dailyWateringTimes)
+        public void SetDailyWateringTimes(TimeSpan?[] dailyWateringTimes)
         {
-            DailyWateringTimes = dailyWateringTimes;
+            DailyWateringTimes = dailyWateringTimes.ToList();
         }
 
         /// <summary>

@@ -1,0 +1,15 @@
+﻿<!-- SOURCE: https://stackoverflow.com/questions/58929072/dropdown-list-is-not-working-in-the-asp-net-blazor-component -->
+
+@using Microsoft.AspNetCore.Components.Web
+@typeparam TItem
+<a class="dropdown-item" Item="@Item" @onclick="e=> Dropdown.HandleSelect(Item, ChildContent)">@ChildContent(Item)</a>
+
+@code {
+    [CascadingParameter(Name = "Dropdown")]
+    public Dropdown<TItem> Dropdown { get; set; }
+
+    [Parameter]
+    public TItem Item { get; set; }
+    [Parameter]
+    public RenderFragment<TItem> ChildContent { get; set; }
+}

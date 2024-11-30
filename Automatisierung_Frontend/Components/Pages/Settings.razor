@@ -5,11 +5,16 @@
 
 <PageTitle> @name </PageTitle>
 
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+
 
 <div class="container-fluid">
 		<div class="row">
 			<!-- Card -->
-			<div class="card text-white w-100 mb-3 text-start">
+			<div class="card w-100 mb-3 text-start">
 				<div class="card-body">
 
 					<!-- card title and Remove Button -->
@@ -28,31 +33,39 @@
 					<br />
 					<table>
 						<tbody>
-							<tr>
-								<th>
-									Moisture @targetWateringData.TargetMoisture_Percentage%
-								</th>
-							</tr>
-
-							<tr>
-								<th>
-									Daily Litres @targetWateringData.TargetDailyWater_Liters l
-								</th>
-							</tr>
-
+						<!-- Moisture Mode Display -->
+						@if (targetWateringData.Mode == WateringData.WateringMode.Moisture)
+						{
 						<tr>
 							<th>
-								Times
-								@foreach(var time in targetWateringData.DailyWateringTimes)
-								{
-									@time.ToString()
-								}
+								Moisture: @targetWateringData.TargetMoisture_Percentage%
 							</th>
 						</tr>
+						}
+
+						<!-- Amount Mode Display -->
+						@if (targetWateringData.Mode == WateringData.WateringMode.Amount)
+						{
+							<tr>
+								<th>
+									Daily Litres: @targetWateringData.TargetDailyWater_Liters l
+								</th>
+							</tr>
+
+							<tr>							
+								<th>
+									<tr> Times: </tr>
+									@foreach(var time in targetWateringData.DailyWateringTimes)
+									{
+										<tr> &emsp; @time.ToString()  </tr>
+									}
+								</th>
+							</tr>
+						}
 
 						<tr>
 							<th>
-								Mode @targetWateringData.Mode
+								Mode: @targetWateringData.Mode
 							</th>
 						</tr>
 					</tbody>
@@ -63,22 +76,72 @@
 </div>
 
 
-<EditForm Model="@targetWateringData" OnValidSubmit="SubmitDataUpdate" FormName="wateringData">
+
+<EditForm Model="@targetWateringData" OnValidSubmit="SubmitDataUpdate" FormName="wateringData" Context="WateringDataEditForm">
 	<label class="col-form-label-lg text-primary"> Settings </label>
 
-	<div class="m-1">
-		<label for="input">Target Moisture Percentage</label>
-		<input id="input" @bind="targetWateringData.TargetMoisture_Percentage" class="form-control" />
-		<span class="text-danger">@validationMessages["Validate"]</span>
+
+
+	<!-- Mode Dropdown -->
+	<div class="m-1 my-5">
+		<label>Watering Mode</label>
+		<Dropdown TItem="WateringData.WateringMode" OnSelected="@OnModeSelected">
+			<InitialTip>Select Mode</InitialTip>
+			<ChildContent>
+				<DropdownListItem Item="@WateringData.WateringMode.Moisture">Moisture</DropdownListItem>
+				<DropdownListItem Item="@WateringData.WateringMode.Amount">Amount</DropdownListItem>
+			</ChildContent>
+		</Dropdown>
 	</div>
+	<div class="dropdown-divider"></div>
 
 
-	<button type="submit" class="btn btn-primary m-1">Submit</button>
+	@if (targetWateringData.Mode == WateringData.WateringMode.Moisture)
+	{		
+		<!-- Moisture Percentage -->
+		<div class="m-1 my-5">
+			<label for="input">Target Moisture Percentage</label>
+			<input id="input" @bind="targetWateringData.TargetMoisture_Percentage" class="form-control" />
+			<span class="text-danger">@validationMessages["Validate"]</span>
+
+		</div>
+		<button type="submit" class="btn btn-primary m-1">Submit</button>
+	}
+	else if (targetWateringData.Mode == WateringData.WateringMode.Amount)
+	{
+		<!-- Daily Amount -->
+		<div class="m-1 my-5">
+			<label for="input">Daily Amount</label>
+			<input id="input" @bind="targetWateringData.TargetDailyWater_Liters" class="form-control" />
+			<span class="text-danger">@validationMessages["Validate"]</span>
+
+		</div>
+		<div class="dropdown-divider"></div>
+
+
+		<!-- Daily Times -->
+		<div class="m-1 my-5">
+
+			<button class="btn" @onclick="AddTime"> <i class="bi bi-plus-circle"></i> Add </button>
+			<button class="btn" @onclick="RemoveTime"> <i class="bi bi-dash-circle"></i> Remove Last</button>
+
+			@for (int i = 0; i < targetWateringData.DailyWateringTimes.Count; i++)
+			{
+				<!-- Needed for reasons -->
+				var icopy = i;
+
+				<MudTimePicker Class="m-1 my-4" Label="Time"  Editable="true" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
+			}
+		</div>
+		<button type="submit" class="btn btn-primary m-1">Submit</button>
+	}
 </EditForm>
-
 
 @code
 {
+
+
+
 	[Parameter]
 	public string ip { get; set; } = "";
 	[Parameter]
@@ -90,24 +153,43 @@
 		{ "Validate", "" }
 	};
 
+
+	#region MODE
+	private void OnModeSelected(WateringData.WateringMode mode)
+	{
+		targetWateringData.Mode = mode;
+	}
+	#endregion
+
+	#region TIMES
+	private void AddTime()
+	{
+		targetWateringData.DailyWateringTimes.Add(new TimeSpan(0, 0, 0));
+	}
+
+	private void RemoveTime()
+	{
+		targetWateringData.DailyWateringTimes.RemoveAt(targetWateringData.DailyWateringTimes.Count - 1);
+	}
+	#endregion
+
 	protected override void OnInitialized()
 	{
 		base.OnInitialized();
 	}
 
-	private void ChangeEvent(ChangeEventArgs e)
-	{
-		Console.WriteLine(e.Value);
 
-	}
-
-
+	#region SUBMIT
 	private void SubmitDataUpdate()
 	{
-		if (targetWateringData.ValidateData())
+		if (!targetWateringData.ValidateData())
 		{
 			validationMessages["Validate"] = "Invalid Settings!";
 			return;
+		}
+		else
+		{
+			validationMessages["Validate"] = "";
 		}
 	}
 
@@ -116,4 +198,5 @@
 	{
 		MessageConfigurator.UpdateWateringData(0, targetWateringData);
 	}
+	#endregion
 }

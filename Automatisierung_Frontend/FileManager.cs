@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Xml.Linq;
 
 namespace Automatisierung_Frontend
 {
@@ -22,7 +23,10 @@ namespace Automatisierung_Frontend
 
         public static void StoreAsJson(object obj, string name, string folderName = "")
         {
-            using (FileStream fs = new FileStream(PersistenFilePath + $"{(folderName != "" ? "/" + folderName : "")}/{name}", FileMode.Create))
+            var path = PersistenFilePath + $"{(folderName != "" ? "/" + folderName : "")}";
+            Directory.CreateDirectory(path);
+
+            using (FileStream fs = new FileStream(path + $"/{name}", FileMode.Create))
             {
                 StreamWriter writer = new StreamWriter(fs);
                 writer.Write(JsonConvert.SerializeObject(obj));
@@ -34,15 +38,21 @@ namespace Automatisierung_Frontend
 
         public static string[] GetAllFilenames(string folderName)
         {
+            var path = PersistenFilePath + $"/{folderName}";
+            Directory.CreateDirectory(path);
+
             return Directory.GetFiles(PersistenFilePath + $"/{folderName}").Select(x => x.Split("\\").Last().ToString()).ToArray();
         }
 
 
         public static object GetObject<T>(string name, string folderName = "")
         {
+            var path = PersistenFilePath + $"{(folderName != "" ? "/" + folderName : "")}";
+            Directory.CreateDirectory(path);
+
             try
             {
-                using (FileStream fs = new FileStream(PersistenFilePath + $"{(folderName != "" ? "/" + folderName : "")}/{name}", FileMode.OpenOrCreate))
+                using (FileStream fs = new FileStream(path + $"/{name}", FileMode.OpenOrCreate))
                 {
 
                     StreamReader reader = new StreamReader(fs);
