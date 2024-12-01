@@ -1,7 +1,149 @@
 ﻿@page "/"
+@using static Automatisierung_Frontend.Components.Pages.Available
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
-Welcome to your new app.
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+
+<div class="container-fluid">
+    <div class="row">
+        @for (int i = 0; i < connections.Length; i++)
+        {
+            int iCopy = i;
+
+
+            <div class="col-md-6 mb-4">
+                <!-- Card -->
+                <div class="card text-white w-100 text-start">
+                    <div class="card-body">
+
+                        <!-- card title -->
+                        <div class="d-flex justify-content-between">
+                            <h5 @onclick:stopPropagation class="card-title">
+                                <p class="card-text btn-outline text-start input-group-lg btn" style="font-size: 25px"> @connections[iCopy].name </p>
+                            </h5>
+                        </div>
+                        
+
+                        <!-- Watering Data -->
+                        <div class="mx-3">
+
+                            @if (wateringData[iCopy].Mode == WateringData.WateringMode.Moisture)
+                            {
+                                <div class="d-flex justify-content-center">
+                                    <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
+                                              Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
+
+                                        <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
+                                            Moisture
+                                        </MudText>
+
+                                        <MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
+                                            @wateringData[iCopy].TargetMoisture_Percentage%
+                                        </MudText>
+                                    </MudPaper>
+                                </div>
+                            }
+
+                            @if (wateringData[iCopy].Mode == WateringData.WateringMode.Amount)
+                            {
+                                <div class="d-flex justify-content-center">
+                                    <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
+                                        <MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
+                                            @(wateringData[iCopy].TargetDailyWater_Liters)l/day
+                                        </MudText>
+                                    </MudPaper>
+                                </div>
+                                <br />
+
+
+                                <div class="container-fluid"> 
+                                    <div class="row">
+
+                                        @for (int j = 0; j < wateringData[iCopy].DailyWateringTimes.Count; j++)
+                                        {
+                                            int jCopy = j;
+                                            TimeSpan? time = @wateringData[iCopy].DailyWateringTimes[jCopy]!;
+
+                                            <div class="col-md-3 mb-4">
+                                                <MudPaper Elevation="3" Class="d-flex justify-center align-center" Style="width: 6vw; height: 70px; border-radius: 5%; background-color: #f5f5f5;">
+                                                    <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Surface">
+                                                        @string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
+                                                    </MudText>
+                                                </MudPaper>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <br />
+                            }
+
+                        </div>
+
+
+                        <!-- Ip Label -->
+                        <label @onclick:stopPropagation class="text-secondary mx-3">
+                            Ip: @connections[iCopy].ip
+                        </label>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+
+
+@code
+{
+    ConnectionObject[] connections;
+    WateringData[] wateringData;
+
+
+
+
+
+
+
+    protected override void OnInitialized()
+    {
+        connections = ConnectionObject.LoadAll();
+        wateringData = GetWateringdata();
+
+
+        // var timer = new Timer(UpdateClock, null, 0, 1000);
+    }
+
+
+    /// <summary>
+    /// TODO: Make this work
+    /// </summary>
+    /// <returns></returns>
+    private WateringData[] GetWateringdata()
+    {
+        var arr = new WateringData[connections.Length];
+        for (int i = 0; i < arr.Length; i++)
+        {
+            arr[i] = new WateringData();
+            arr[i].Mode = WateringData.WateringMode.Amount;
+
+            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
+            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
+
+            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
+
+            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
+
+
+            arr[i].TargetDailyWater_Liters = 30;
+        }
+
+        return arr;
+    }
+}

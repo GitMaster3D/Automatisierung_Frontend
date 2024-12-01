@@ -13,65 +13,81 @@
 
 <div class="container-fluid">
 		<div class="row">
-			<!-- Card -->
-			<div class="card w-100 mb-3 text-start">
-				<div class="card-body">
+		<!-- Card -->
+		<div class="card text-white w-100 text-start">
+			<div class="card-body">
 
-					<!-- card title and Remove Button -->
-					<div class="d-flex justify-content-between">
-						<h5  class="card-title">
-							@name
-						</h5>
-
-						<!-- Ip Label -->
-						<label class="text-secondary mx-3">
-							Ip: @ip
-						</label>
-					</div>
-
-					<br />
-					<br />
-					<table>
-						<tbody>
-						<!-- Moisture Mode Display -->
-						@if (targetWateringData.Mode == WateringData.WateringMode.Moisture)
-						{
-						<tr>
-							<th>
-								Moisture: @targetWateringData.TargetMoisture_Percentage%
-							</th>
-						</tr>
-						}
-
-						<!-- Amount Mode Display -->
-						@if (targetWateringData.Mode == WateringData.WateringMode.Amount)
-						{
-							<tr>
-								<th>
-									Daily Litres: @targetWateringData.TargetDailyWater_Liters l
-								</th>
-							</tr>
-
-							<tr>							
-								<th>
-									<tr> Times: </tr>
-									@foreach(var time in targetWateringData.DailyWateringTimes)
-									{
-										<tr> &emsp; @time.ToString()  </tr>
-									}
-								</th>
-							</tr>
-						}
-
-						<tr>
-							<th>
-								Mode: @targetWateringData.Mode
-							</th>
-						</tr>
-					</tbody>
-					</table>
+				<!-- card title -->
+				<div class="d-flex justify-content-between">
+					<h5 @onclick:stopPropagation class="card-title">
+						<p class="card-text btn-outline text-start input-group-lg btn" style="font-size: 25px"> @name </p>
+					</h5>
 				</div>
+
+
+				<!-- Watering Data -->
+				<div class="mx-3">
+
+					@if (targetWateringData.Mode == WateringData.WateringMode.Moisture)
+					{
+						<div class="d-flex justify-content-center">
+							<MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
+									  Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
+
+								<MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
+									Moisture
+								</MudText>
+
+								<MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
+									@targetWateringData.TargetMoisture_Percentage%
+								</MudText>
+							</MudPaper>
+						</div>
+					}
+
+					@if (targetWateringData.Mode == WateringData.WateringMode.Amount)
+					{
+						<div class="d-flex justify-content-center">
+							<MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
+								<MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
+									@(targetWateringData.TargetDailyWater_Liters)l/day
+								</MudText>
+							</MudPaper>
+						</div>
+						<br />
+
+
+						<div class="container-fluid">
+							<div class="d-flex flex-row justify-content-around">
+
+								@for (int j = 0; j < targetWateringData.DailyWateringTimes.Count; j++)
+								{
+									int jCopy = j;
+									TimeSpan? time = @targetWateringData.DailyWateringTimes[jCopy]!;
+
+									<div class="d-flex justify-content-around">
+										<MudPaper Elevation="3" Class="d-flex justify-center align-center" Style="width: 6vw; height: 70px; border-radius: 5%; background-color: #f5f5f5;">
+											<MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Surface">
+												@string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
+											</MudText>
+										</MudPaper>
+									</div>
+								}
+							</div>
+						</div>
+						<br />
+					}
+
+				</div>
+
+
+				<!-- Ip Label -->
+				<label @onclick:stopPropagation class="text-secondary mx-3">
+					Ip: @ip
+				</label>
+
 			</div>
+		</div>
 		</div>
 </div>
 
@@ -122,15 +138,15 @@
 		<!-- Daily Times -->
 		<div class="m-1 my-5">
 
-			<button class="btn" @onclick="AddTime"> <i class="bi bi-plus-circle"></i> Add </button>
-			<button class="btn" @onclick="RemoveTime"> <i class="bi bi-dash-circle"></i> Remove Last</button>
+			<button class="btn btn-outline-primary" @onclick="AddTime"> <i class="bi bi-plus-circle"></i> Add </button>
+			<button class="btn btn-outline-danger" @onclick="RemoveTime"> <i class="bi bi-dash-circle"></i> Remove Last</button>
 
 			@for (int i = 0; i < targetWateringData.DailyWateringTimes.Count; i++)
 			{
 				<!-- Needed for reasons -->
 				var icopy = i;
 
-				<MudTimePicker Class="m-1 my-4" Label="Time"  Editable="true" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
+				<MudTimePicker Class="m-1 my-4" Label="Time" PickerVariant="PickerVariant.Dialog" MinuteSelectionStep="5" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
 			}
 		</div>
 		<button type="submit" class="btn btn-primary m-1">Submit</button>
@@ -139,9 +155,6 @@
 
 @code
 {
-
-
-
 	[Parameter]
 	public string ip { get; set; } = "";
 	[Parameter]
