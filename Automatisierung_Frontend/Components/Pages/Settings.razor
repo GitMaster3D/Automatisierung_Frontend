@@ -11,82 +11,87 @@
 
 
 
-<div class="container-fluid">
-		<div class="row">
-		<!-- Card -->
-		<div class="card text-white w-100 text-start">
-			<div class="card-body">
+<div class="container-fluid w-100">
+	<div class="row w-100">
 
-				<!-- card title -->
-				<div class="d-flex justify-content-between">
-					<h5 @onclick:stopPropagation class="card-title">
-						<p class="card-text btn-outline text-start input-group-lg btn" style="font-size: 25px"> @name </p>
-					</h5>
-				</div>
+		<div class="w-100">
 
+			<!-- Card -->
+			<div class="card text-white w-100 text-start">
+				<div class="card-body">
 
-				<!-- Watering Data -->
-				<div class="mx-3">
-
-					@if (targetWateringData.Mode == WateringData.WateringMode.Moisture)
-					{
-						<div class="d-flex justify-content-center">
-							<MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
-									  Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
-
-								<MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
-									Moisture
-								</MudText>
-
-								<MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
-									@targetWateringData.TargetMoisture_Percentage%
-								</MudText>
-							</MudPaper>
-						</div>
-					}
-
-					@if (targetWateringData.Mode == WateringData.WateringMode.Amount)
-					{
-						<div class="d-flex justify-content-center">
-							<MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
-								<MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
-									@(targetWateringData.TargetDailyWater_Liters)l/day
-								</MudText>
-							</MudPaper>
-						</div>
-						<br />
+					<!-- card title -->
+					<div class="d-flex justify-content-between">
+						<h5 @onclick:stopPropagation class="card-title">
+							<p class="card-text btn-outline text-start input-group-lg btn" style="font-size: 25px"> @name </p>
+						</h5>
+					</div>
 
 
-						<div class="container-fluid">
-							<div class="d-flex flex-row justify-content-around">
+					<!-- Watering Data -->
+					<div class="mx-3">
 
-								@for (int j = 0; j < targetWateringData.DailyWateringTimes.Count; j++)
-								{
-									int jCopy = j;
-									TimeSpan? time = @targetWateringData.DailyWateringTimes[jCopy]!;
+						@if (targetWateringData.Mode == WateringData.WateringMode.Moisture)
+						{
+							<div class="d-flex justify-content-center">
+								<MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
+										  Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
 
-									<div class="d-flex justify-content-around">
-										<MudPaper Elevation="3" Class="d-flex justify-center align-center" Style="width: 6vw; height: 70px; border-radius: 5%; background-color: #f5f5f5;">
-											<MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Surface">
-												@string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
-											</MudText>
-										</MudPaper>
-									</div>
-								}
+									<MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
+										Moisture
+									</MudText>
+
+									<MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
+										@targetWateringData.TargetMoisture_Percentage%
+									</MudText>
+								</MudPaper>
 							</div>
-						</div>
-						<br />
-					}
+						}
+
+						@if (targetWateringData.Mode == WateringData.WateringMode.Amount)
+						{
+							<div class="d-flex justify-content-center">
+								<MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
+									<MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
+										@(targetWateringData.TargetDailyWater_Liters)l/day
+									</MudText>
+								</MudPaper>
+							</div>
+							<br />
+
+
+							<!-- Timeline -->
+							<MudContainer MaxWidth="MaxWidth.Small" class="container-fluid">
+								<div class="row">
+									<MudTimeline TimelineOrientation="TimelineOrientation.Horizontal">
+										@for (int j = 0; j < targetWateringData.DailyWateringTimes.Count; j++)
+										{
+											int jCopy = j;
+											TimeSpan? time = @targetWateringData.DailyWateringTimes[jCopy]!;
+
+											<MudTimelineItem Color="Color.Primary">
+												<MudAlert Severity="Severity.Normal">
+													@string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
+												</MudAlert>
+											</MudTimelineItem>
+										}
+									</MudTimeline>
+								</div>
+							</MudContainer>
+							<br />
+						}
+
+					</div>
+
+
+					<!-- Ip Label -->
+					<label @onclick:stopPropagation class="text-secondary mx-3">
+						Ip: @ip
+					</label>
 
 				</div>
-
-
-				<!-- Ip Label -->
-				<label @onclick:stopPropagation class="text-secondary mx-3">
-					Ip: @ip
-				</label>
-
 			</div>
+
 		</div>
 		</div>
 </div>
@@ -138,15 +143,18 @@
 		<!-- Daily Times -->
 		<div class="m-1 my-5">
 
+			<!-- AddButton -->
 			<button class="btn btn-outline-primary" @onclick="AddTime"> <i class="bi bi-plus-circle"></i> Add </button>
-			<button class="btn btn-outline-danger" @onclick="RemoveTime"> <i class="bi bi-dash-circle"></i> Remove Last</button>
 
 			@for (int i = 0; i < targetWateringData.DailyWateringTimes.Count; i++)
 			{
 				<!-- Needed for reasons -->
 				var icopy = i;
+				<div class="d-flex">
 
-				<MudTimePicker Class="m-1 my-4" Label="Time" PickerVariant="PickerVariant.Dialog" MinuteSelectionStep="5" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
+					<button class="btn btn-outline-danger h-50" style="transform: translateY(50%)" @onclick="() => RemoveTime(targetWateringData.DailyWateringTimes[icopy])"> <i class="bi bi-dash-circle"></i></button>
+					<MudTimePicker Class="m-1 my-4" PickerClosed="Sort" Label="Time" PickerVariant="PickerVariant.Dialog" MinuteSelectionStep="5" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
+				</div>
 			}
 		</div>
 		<button type="submit" class="btn btn-primary m-1">Submit</button>
@@ -175,14 +183,19 @@
 	#endregion
 
 	#region TIMES
-	private void AddTime()
+	private void Sort()
 	{
-		targetWateringData.DailyWateringTimes.Add(new TimeSpan(0, 0, 0));
+		targetWateringData.DailyWateringTimes.Sort();
 	}
 
-	private void RemoveTime()
+	private void AddTime()
 	{
-		targetWateringData.DailyWateringTimes.RemoveAt(targetWateringData.DailyWateringTimes.Count - 1);
+		targetWateringData.AddWateringTime(new TimeSpan(0, 0, 0));
+	}
+
+	private void RemoveTime(TimeSpan? t)
+	{
+		targetWateringData.RemoveWateringTime(t);
 	}
 	#endregion
 

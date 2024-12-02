@@ -37,13 +37,13 @@
                             {
                                 <div class="d-flex justify-content-center">
                                     <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
-                                              Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
+                                              Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
 
                                         <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
                                             Moisture
                                         </MudText>
 
-                                        <MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
+                                        <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
                                             @wateringData[iCopy].TargetMoisture_Percentage%
                                         </MudText>
                                     </MudPaper>
@@ -53,8 +53,8 @@
                             @if (wateringData[iCopy].Mode == WateringData.WateringMode.Amount)
                             {
                                 <div class="d-flex justify-content-center">
-                                    <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 15vw; height: 100px; border-radius: 5%; background-color: #f5f5f5;">
-                                        <MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary">
+                                    <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
+                                        <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
                                             @(wateringData[iCopy].TargetDailyWater_Liters)l/day
                                         </MudText>
                                     </MudPaper>
@@ -62,24 +62,27 @@
                                 <br />
 
 
-                                <div class="container-fluid"> 
+                                <MudContainer MaxWidth="MaxWidth.Small" class="container-fluid"> 
                                     <div class="row">
 
-                                        @for (int j = 0; j < wateringData[iCopy].DailyWateringTimes.Count; j++)
-                                        {
-                                            int jCopy = j;
-                                            TimeSpan? time = @wateringData[iCopy].DailyWateringTimes[jCopy]!;
 
-                                            <div class="col-md-3 mb-4">
-                                                <MudPaper Elevation="3" Class="d-flex justify-center align-center" Style="width: 6vw; height: 70px; border-radius: 5%; background-color: #f5f5f5;">
-                                                    <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Surface">
+
+                                        <!-- Display Times -->
+                                        <MudTimeline TimelineOrientation="TimelineOrientation.Horizontal">
+                                            @for (int j = 0; j < wateringData[iCopy].DailyWateringTimes.Count; j++)
+                                            {
+                                                int jCopy = j;
+                                                TimeSpan? time = @wateringData[iCopy].DailyWateringTimes[jCopy]!;
+
+                                                <MudTimelineItem Color="Color.Primary">
+                                                    <MudAlert Severity="Severity.Normal">
                                                         @string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
-                                                    </MudText>
-                                                </MudPaper>
-                                            </div>
-                                        }
+                                                    </MudAlert>
+                                                </MudTimelineItem>
+                                            }
+                                        </MudTimeline>
                                     </div>
-                                </div>
+                                </MudContainer>
                                 <br />
                             }
 
@@ -141,8 +144,15 @@
             arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
 
 
+            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
+
+            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
+
+
             arr[i].TargetDailyWater_Liters = 30;
         }
+
+        arr[1].Mode = WateringData.WateringMode.Moisture;
 
         return arr;
     }

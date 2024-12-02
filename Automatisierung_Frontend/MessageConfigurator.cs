@@ -49,6 +49,17 @@ public class WateringData
 
 	    internal int TargetPump;
 
+        public void RemoveWateringTime(TimeSpan? time)
+        {
+            DailyWateringTimes.Remove(time);
+		}
+
+        public void AddWateringTime(TimeSpan? time)
+        {
+            DailyWateringTimes.Add(time);
+            DailyWateringTimes.Sort();
+        }
+
         /// <summary>
         /// Check if the Watering Data is validly configured
         /// </summary>
