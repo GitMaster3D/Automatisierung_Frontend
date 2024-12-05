@@ -1,0 +1,68 @@
+﻿<MudDialog>
+    <DialogContent>
+        @if (cancellationTokenSource.Token.IsCancellationRequested)
+        {
+            <h1>
+                Error
+            </h1>
+            <MudDivider />
+            <br />
+
+
+            <img src="/Images/EvilRat.jpg" />
+            <MudAlert Severity="Severity.Error">
+                Failed to Detect
+            </MudAlert>
+        }
+        else
+        {
+            <h1>
+                Detecting...
+            </h1>
+            <MudDivider />
+            <br />
+
+
+            <img src="/Images/rat-spinning.gif"/>
+        }
+    </DialogContent>
+    <DialogActions>
+        <button @onclick="Cancel" class="btn btn-outline-danger align-content-center">
+            @if (cancellationTokenSource.Token.IsCancellationRequested)
+            {
+               <div>Close</div>
+            }
+            else
+            {
+                <div>Cancel</div>
+            }
+        </button>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public CancellationTokenSource cancellationTokenSource { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        cancellationTokenSource.Token.Register(() =>
+        {
+            InvokeAsync(() =>
+            {
+                StateHasChanged();
+            });
+        });
+    }
+
+    private void Cancel()
+    {
+        cancellationTokenSource.Cancel(true);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

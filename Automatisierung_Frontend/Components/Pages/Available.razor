@@ -1,7 +1,7 @@
 ﻿@page "/available"
 @rendermode InteractiveServer
 
-<PageTitle>ESP List</PageTitle>
+<PageTitle>Configure</PageTitle>
 
 @using Api_Connection
 @using System.ComponentModel.DataAnnotations
@@ -12,10 +12,14 @@
 @using System.Text
 @inject ILogger<Available> Logger
 @inject NavigationManager NavManager
+@inject IDialogService DialogService
 
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
 
 <h1>Overview</h1>
-
 
 @if (ipAmount < 0)
 {
@@ -38,8 +42,7 @@ else
                             </h5>
 
                             <button class="btn btn-outline-danger" @onclick:stopPropagation @onclick="() => RemoveIp(api)">
-                                <img src="/Images/rat-spinning-ezgif.com-resize.gif"/>
-                                <p style="position:absolute; transform: translate(15px, -40px);"> REMOVE </p>
+                                <div> REMOVE </div>
                             </button>
                         </div>
 
@@ -78,6 +81,7 @@ else
 <br />
 
 
+
 @code {
     ConnectionObject[] connections { get { return connections__.ToArray(); } set { connections__ = value.ToList(); ipAmount = connections__.Count; } }
     List<ConnectionObject> connections__;
@@ -96,11 +100,14 @@ else
 
 
 
+    #region Connection
     public class ConnectionObject
     {
         public string ip = "";
         [JsonIgnore] public string name { get { return name_; } set { name_ = value; OnNameChanged(); }}
         const string folderName = "ConnectionObjects";
+        [JsonIgnore] public int reachability;
+
 
         [JsonProperty] private string name_;
 
@@ -109,7 +116,6 @@ else
         {
             Store();
         }
-
 
         public void Store()
         {
@@ -141,7 +147,9 @@ else
             return (ConnectionObject)FileManager.GetObject<ConnectionObject>(name, folderName);
         }
     }
+    #endregion
 
+    #region Input
     class IpInput
     {
         public string ip { get; set; } = "";
@@ -161,14 +169,43 @@ else
         connections__.Remove(obj);
         obj.Delete();
     }
+    #endregion
 
-
-    private void FindRaspberryIp()
+    bool isSearching = false;
+    private async void FindRaspberryIp()
     {
+        if (isSearching) return;
+        isSearching = true;
+
         CancellationTokenSource cancellationTokenSource = new();
-        var task = Task.Run(() => ListenForIPBroadcast(cancellationTokenSource.Token));
-        if (!task.Wait(TimeSpan.FromSeconds(10)))
-            cancellationTokenSource.Cancel();
+        OpenCancelDialog(cancellationTokenSource);
+
+        cancellationTokenSource.CancelAfter(10000);
+        try
+        {
+            await Task.Run(() => ListenForIPBroadcast(cancellationTokenSource.Token));
+        }
+        catch
+        {
+            Console.WriteLine("Cancelled");
+        }
+
+    }
+
+    /// <summary>
+    /// Shows a Cancel Dialog that can be used to 
+    /// Cancel the Search 
+    /// </summary>
+    private void OpenCancelDialog(CancellationTokenSource cancellationTokenSource)
+    {
+        var parameters = new DialogParameters<CancelDialog>
+        {
+            { x => x.cancellationTokenSource, cancellationTokenSource },
+        };
+
+        var options = new DialogOptions() { MaxWidth = MaxWidth.Medium, NoHeader = true };
+
+        DialogService.ShowAsync<CancelDialog>("", parameters, options);
     }
 
 
@@ -176,30 +213,38 @@ else
     /// Keine sicherheitslücken hier zu erkennen, das
     /// ist sicher und gut und gesund
     /// </summary>
-    private void ListenForIPBroadcast(CancellationToken t)
+    private async void ListenForIPBroadcast(CancellationToken ct)
     {
-        t.ThrowIfCancellationRequested();
-        IpInput foundIp = new();
-        using (UdpClient udpServer = new UdpClient(1234))
+        try
         {
-            while (true)
+            IpInput foundIp = new();
+            var remoteEP = new IPEndPoint(IPAddress.Any, 1234);
+            using (UdpClient udpServer = new UdpClient(remoteEP))
             {
-                var remoteEP = new IPEndPoint(IPAddress.Any, 1234);
-                var data = udpServer.Receive(ref remoteEP);
-
-                foundIp.ip = Encoding.UTF8.GetString(data);
-
-                if (foundIp.IsValidIp())
+                while (true)
                 {
-                    udpServer.Close();
-                    break;
-                }
-            }            
-        }
+                    var data = await udpServer.ReceiveAsync(ct);
+                    foundIp.ip = Encoding.UTF8.GetString(data.Buffer);
 
-        // Input the recieved Ip
-        ipInput = foundIp;
-        HandleIpInputSubmit();
+
+                    if (foundIp.IsValidIp())
+                    {
+                        udpServer.Close();
+                        break;
+                    }
+                }            
+            }
+
+            // Input the recieved Ip
+            ipInput = foundIp;
+            HandleIpInputSubmit();        
+
+        }
+        catch
+        {
+            Console.WriteLine("Cancelled");
+            isSearching = false;
+        }
     }
 
 
@@ -227,7 +272,6 @@ else
     protected override void OnInitialized()
     {
         connections = ConnectionObject.LoadAll();
-        //connections.Concat(ConnectionObject.LoadAll());
     }
 
 

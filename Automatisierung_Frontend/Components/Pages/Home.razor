@@ -1,5 +1,10 @@
-﻿@page "/"
+﻿@rendermode InteractiveServer
+
+@page "/"
+@using Newtonsoft.Json
 @using static Automatisierung_Frontend.Components.Pages.Available
+
+
 
 <PageTitle>Home</PageTitle>
 
@@ -28,65 +33,82 @@
                                 <p class="card-text btn-outline text-start input-group-lg btn" style="font-size: 25px"> @connections[iCopy].name </p>
                             </h5>
                         </div>
-                        
 
-                        <!-- Watering Data -->
-                        <div class="mx-3">
+                        @if (connections[iCopy].reachability == 0)
+                        {
+                            <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">
+                                <span> Connecting... </span>
+                            </MudAlert>
+                        }
+                        @if (connections[iCopy].reachability == 1)
+                        {
+                            <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center">
+                                <i class="bi bi-wifi-off"></i>
+                                <span> Unable To Connect </span>
+                            </MudAlert>                            
+                        }
+                        else
+                        {
+                            <!-- Watering Data -->
+                            <div class="mx-3">
 
-                            @if (wateringData[iCopy].Mode == WateringData.WateringMode.Moisture)
-                            {
-                                <div class="d-flex justify-content-center">
-                                    <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
-                                              Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
+                                @if (wateringData[iCopy].Mode == WateringData.WateringMode.Moisture)
+                                {
+                                    <div class="d-flex justify-content-center">
+                                        <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center"
+                                                  Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
 
-                                        <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
-                                            Moisture
-                                        </MudText>
+                                            <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
+                                                Moisture
+                                            </MudText>
 
-                                        <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
-                                            @wateringData[iCopy].TargetMoisture_Percentage%
-                                        </MudText>
-                                    </MudPaper>
-                                </div>
-                            }
-
-                            @if (wateringData[iCopy].Mode == WateringData.WateringMode.Amount)
-                            {
-                                <div class="d-flex justify-content-center">
-                                    <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
-                                        <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
-                                            @(wateringData[iCopy].TargetDailyWater_Liters)l/day
-                                        </MudText>
-                                    </MudPaper>
-                                </div>
-                                <br />
-
-
-                                <MudContainer MaxWidth="MaxWidth.Small" class="container-fluid"> 
-                                    <div class="row">
-
-
-
-                                        <!-- Display Times -->
-                                        <MudTimeline TimelineOrientation="TimelineOrientation.Horizontal">
-                                            @for (int j = 0; j < wateringData[iCopy].DailyWateringTimes.Count; j++)
-                                            {
-                                                int jCopy = j;
-                                                TimeSpan? time = @wateringData[iCopy].DailyWateringTimes[jCopy]!;
-
-                                                <MudTimelineItem Color="Color.Primary">
-                                                    <MudAlert Severity="Severity.Normal">
-                                                        @string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
-                                                    </MudAlert>
-                                                </MudTimelineItem>
-                                            }
-                                        </MudTimeline>
+                                            <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
+                                                @wateringData[iCopy].TargetMoisture_Percentage%
+                                            </MudText>
+                                        </MudPaper>
                                     </div>
-                                </MudContainer>
-                                <br />
-                            }
+                                }
 
-                        </div>
+                                @if (wateringData[iCopy].Mode == WateringData.WateringMode.Amount)
+                                {
+                                    <div class="d-flex justify-content-center">
+                                        <MudPaper Elevation="3" Class="d-flex flex-column justify-center align-center" Style="width: 10vw; height: 80px; border-radius: 5%; background-color: #f5f5f5;">
+                                            <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary">
+                                                @(wateringData[iCopy].TargetDailyWater_Liters)l/day
+                                            </MudText>
+                                        </MudPaper>
+                                    </div>
+                                    <br />
+
+
+                                    <MudContainer MaxWidth="MaxWidth.Small" class="container-fluid"> 
+                                        <div class="row">
+
+
+
+                                            <!-- Display Times -->
+                                            <MudTimeline TimelineOrientation="TimelineOrientation.Horizontal">
+                                                @for (int j = 0; j < wateringData[iCopy].DailyWateringTimes.Count; j++)
+                                                {
+                                                    int jCopy = j;
+                                                    TimeSpan? time = @wateringData[iCopy].DailyWateringTimes[jCopy]!;
+
+                                                    <MudTimelineItem Color="Color.Primary">
+                                                        <MudAlert Severity="Severity.Normal" ContentAlignment="HorizontalAlignment.Center">
+                                                            @string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
+                                                        </MudAlert>
+                                                    </MudTimelineItem>
+                                                }
+                                            </MudTimeline>
+                                        </div>
+                                    </MudContainer>
+                                    <br />
+                                }
+
+                            </div>
+
+                        }
+
 
 
                         <!-- Ip Label -->
@@ -119,10 +141,42 @@
         connections = ConnectionObject.LoadAll();
         wateringData = GetWateringdata();
 
-
-        // var timer = new Timer(UpdateClock, null, 0, 1000);
+        LoadWateringData();
     }
 
+    private void LoadWateringData()
+    {
+        for (int i = 0; i < connections.Length; i++)
+        {
+            GetData(i);
+        }
+    }
+
+
+    private async void GetData(int index)
+    {
+        ConnectionObject obj = connections[index];
+        try
+        {
+
+            Api_Connection.API_Connection.SetHost(obj.ip, 8000);
+            var response = await Api_Connection.API_Connection.Get("/getwateringdata");
+
+            wateringData[index] = JsonConvert.DeserializeObject<WateringData>(response.data);
+
+
+            //"{\"DailyWateringTimes\": [\"00:00\", \"14:51\", \"14:52\"], \"TargetMoisture_Percentage\": 0.0, \"TargetDailyWater_Liters\": 9.0, \"Mode\": 2}"
+
+            obj.reachability = 2;
+        }
+        catch (Exception ex)
+        {
+            obj.reachability = 1;
+        }
+
+        Console.WriteLine("Index: " + index + " State: " + connections[index].reachability);
+        StateHasChanged();
+    }
 
     /// <summary>
     /// TODO: Make this work
@@ -134,25 +188,7 @@
         for (int i = 0; i < arr.Length; i++)
         {
             arr[i] = new WateringData();
-            arr[i].Mode = WateringData.WateringMode.Amount;
-
-            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
-            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
-
-            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
-
-            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
-
-
-            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
-
-            arr[i].DailyWateringTimes.Add(new TimeSpan(12, 30, 11));
-
-
-            arr[i].TargetDailyWater_Liters = 30;
         }
-
-        arr[1].Mode = WateringData.WateringMode.Moisture;
 
         return arr;
     }

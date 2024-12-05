@@ -70,7 +70,7 @@
 											TimeSpan? time = @targetWateringData.DailyWateringTimes[jCopy]!;
 
 											<MudTimelineItem Color="Color.Primary">
-												<MudAlert Severity="Severity.Normal">
+												<MudAlert Severity="Severity.Normal" ContentAlignment="HorizontalAlignment.Center">
 													@string.Format("{0:00}:{1:00}", time.Value.Hours, time.Value.Minutes)
 												</MudAlert>
 											</MudTimelineItem>
@@ -124,9 +124,7 @@
 			<label for="input">Target Moisture Percentage</label>
 			<input id="input" @bind="targetWateringData.TargetMoisture_Percentage" class="form-control" />
 			<span class="text-danger">@validationMessages["Validate"]</span>
-
 		</div>
-		<button type="submit" class="btn btn-primary m-1">Submit</button>
 	}
 	else if (targetWateringData.Mode == WateringData.WateringMode.Amount)
 	{
@@ -134,8 +132,6 @@
 		<div class="m-1 my-5">
 			<label for="input">Daily Amount</label>
 			<input id="input" @bind="targetWateringData.TargetDailyWater_Liters" class="form-control" />
-			<span class="text-danger">@validationMessages["Validate"]</span>
-
 		</div>
 		<div class="dropdown-divider"></div>
 
@@ -157,8 +153,28 @@
 				</div>
 			}
 		</div>
-		<button type="submit" class="btn btn-primary m-1">Submit</button>
 	}
+	<button type="submit" @onclick="SetData" class="btn btn-primary m-1">Submit</button>
+
+	@if (validationMessages["NoConnection"] != "")
+	{
+		<MudAlert Severity="Severity.Error">@validationMessages["NoConnection"]</MudAlert>	
+	}
+	@if (validationMessages["SuccsessfulUpload"] != "")
+	{
+		<MudAlert Severity="Severity.Success">@validationMessages["SuccsessfulUpload"]</MudAlert>
+	}
+	@if (validationMessages["Uploading"] != "")
+	{
+		<MudAlert Severity="Severity.Info">@validationMessages["Uploading"]</MudAlert>
+	}
+	@if (validationMessages["Validate"] != "")
+	{
+		<MudAlert Severity="Severity.Error" class="text-danger">@validationMessages["Validate"]</MudAlert>
+	}
+
+	<br />
+	<br />
 </EditForm>
 
 @code
@@ -171,7 +187,10 @@
 	WateringData targetWateringData = new();
 	public Dictionary<string, string> validationMessages = new()
 	{
-		{ "Validate", "" }
+		{ "Validate", "" },
+		{ "NoConnection", ""},
+		{ "SuccsessfulUpload", ""},
+		{ "Uploading", "" }
 	};
 
 
@@ -220,9 +239,32 @@
 	}
 
 
-	private void SetData()
+	private async void SetData()
 	{
-		MessageConfigurator.UpdateWateringData(0, targetWateringData);
+		if (!targetWateringData.ValidateData()) return;
+
+		validationMessages["NoConnection"] = "";
+		validationMessages["SuccsessfulUpload"] = "";
+		validationMessages["Uploading"] = "Uploading";
+		StateHasChanged();
+
+		try
+		{
+			Api_Connection.API_Connection.SetHost(ip, 8000);
+			bool succsess = await MessageConfigurator.UpdateWateringData(0, targetWateringData);
+
+			if(succsess)
+				validationMessages["SuccsessfulUpload"] = "Succsess";
+			else
+				validationMessages["NoConnection"] = "Unable to Upload data!";
+		}
+		catch
+		{
+			validationMessages["NoConnection"] = "Unable to Upload data!";
+		}
+
+		validationMessages["Uploading"] = "";
+		StateHasChanged();
 	}
 	#endregion
 }

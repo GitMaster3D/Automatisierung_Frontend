@@ -1,14 +1,17 @@
 ﻿using Api_Connection;
+using System.Net;
 
 namespace Automatisierung_Frontend
 {
     public class MessageConfigurator
     {
-        public static async void UpdateWateringData(int targetPump, WateringData wateringData)
+        public static async Task<bool> UpdateWateringData(int targetPump, WateringData wateringData)
         {
             wateringData.TargetPump = targetPump;
 
-            await API_Connection.Post("/setprogram", wateringData);
+            var response = await API_Connection.Post("/setprogram", wateringData);
+
+            return response.statusCode == HttpStatusCode.OK;
         }
 
         public static async void WaterImmediate(int targetPump, WaterImmediateData data)
