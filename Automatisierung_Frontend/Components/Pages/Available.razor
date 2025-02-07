@@ -184,13 +184,14 @@ else
         try
         {
             await Task.Run(() => ListenForIPBroadcast(cancellationTokenSource.Token));
+            StateHasChanged();
         }
         catch
         {
             Console.WriteLine("Cancelled");
         }
 
-    }
+     }
 
     /// <summary>
     /// Shows a Cancel Dialog that can be used to 
@@ -235,10 +236,18 @@ else
                 }            
             }
 
-            // Input the recieved Ip
-            ipInput = foundIp;
-            HandleIpInputSubmit();        
+            // Input the recied IP
+            await InvokeAsync(() =>
+            {
+                ConnectionObject obj = new();
+                obj.ip = foundIp.ip;
+                obj.name = "New Connection";
+                connections = connections.Concat(new ConnectionObject[] { obj }).ToArray();
 
+                obj.Store();
+                isSearching = false;
+            });
+            StateHasChanged();
         }
         catch
         {

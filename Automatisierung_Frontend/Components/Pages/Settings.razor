@@ -149,7 +149,7 @@
 				<div class="d-flex">
 
 					<button class="btn btn-outline-danger h-50" style="transform: translateY(50%)" @onclick="() => RemoveTime(targetWateringData.DailyWateringTimes[icopy])"> <i class="bi bi-dash-circle"></i></button>
-					<MudTimePicker Class="m-1 my-4" PickerClosed="Sort" Label="Time" PickerVariant="PickerVariant.Dialog" MinuteSelectionStep="5" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
+					<MudTimePicker Class="m-1 my-4" PickerClosed="Sort" Label="Time" PickerVariant="PickerVariant.Dialog" MinuteSelectionStep="1" @bind-Time="targetWateringData.DailyWateringTimes[icopy]" />
 				</div>
 			}
 		</div>

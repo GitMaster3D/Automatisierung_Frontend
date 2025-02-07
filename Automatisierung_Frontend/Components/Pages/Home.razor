@@ -132,10 +132,6 @@
 
 
 
-
-
-
-
     protected override void OnInitialized()
     {
         connections = ConnectionObject.LoadAll();
@@ -161,16 +157,17 @@
 
             Api_Connection.API_Connection.SetHost(obj.ip, 8000);
             var response = await Api_Connection.API_Connection.Get("/getwateringdata");
+            var cleaned = response.data.Substring(1, response.data.Length - 2).Replace("\\", "");
 
-            wateringData[index] = JsonConvert.DeserializeObject<WateringData>(response.data);
 
+            wateringData[index] = JsonConvert.DeserializeObject<WateringData>(cleaned);
 
-            //"{\"DailyWateringTimes\": [\"00:00\", \"14:51\", \"14:52\"], \"TargetMoisture_Percentage\": 0.0, \"TargetDailyWater_Liters\": 9.0, \"Mode\": 2}"
 
             obj.reachability = 2;
         }
         catch (Exception ex)
         {
+            Console.WriteLine(ex);
             obj.reachability = 1;
         }
 

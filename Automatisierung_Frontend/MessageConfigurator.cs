@@ -1,4 +1,5 @@
 ﻿using Api_Connection;
+using Newtonsoft.Json;
 using System.Net;
 
 namespace Automatisierung_Frontend
@@ -39,15 +40,24 @@ namespace Automatisierung_Frontend
 
 public class WateringData
     {
-        public float TargetMoisture_Percentage 
-        { 
-	        get => TargetMoisturePercentage;
-            set => TargetMoisturePercentage = value < 0 ? 0 : value > 100 ? 100 : value;
+        public float TargetMoisture_Percentage
+        {
+            get => TargetMoisturePercentage;
+            set
+            {
+                TargetMoisturePercentage = value;
+                if (TargetMoisturePercentage > 100) TargetMoisturePercentage = 100;
+                if (TargetMoisturePercentage < 0) TargetMoisturePercentage = 0;
+            }
         }
         private float TargetMoisturePercentage;
 
 	    public float TargetDailyWater_Liters { get; set; }
+
+
+        [JsonConverter(typeof(CustomTimeSpanListConverter), @"hh\:mm")]
         public List<TimeSpan?> DailyWateringTimes { get; set; } = new();
+
         public WateringMode Mode { get; set; } = WateringMode.Undefined;
 
 	    internal int TargetPump;
@@ -107,5 +117,56 @@ public class WateringData
             Moisture = 1,
             Amount = 2
         }
+    }
+}
+
+
+public class CustomTimeSpanListConverter : JsonConverter<List<TimeSpan?>>
+{
+    private readonly string _format;
+
+    // Constructor to allow passing a custom format
+    public CustomTimeSpanListConverter(string format = @"hh\:mm\:ss")
+    {
+        _format = format;
+    }
+
+    public override void WriteJson(JsonWriter writer, List<TimeSpan?> value, JsonSerializer serializer)
+    {
+        // Write the list of TimeSpan as an array of strings
+        writer.WriteStartArray();
+        foreach (var timeSpan in value)
+        {
+            writer.WriteValue(timeSpan.Value.ToString(_format));
+        }
+        writer.WriteEndArray();
+    }
+
+    public override List<TimeSpan?> ReadJson(JsonReader reader, Type objectType, List<TimeSpan?> existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        // Read the JSON array of strings into a list of TimeSpan
+        if (reader.TokenType == JsonToken.StartArray)
+        {
+            var timeSpanList = new List<TimeSpan?>();
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.EndArray)
+                {
+                    break;
+                }
+
+                if (reader.TokenType == JsonToken.String && reader.Value is string timeSpanString)
+                {
+                    timeSpanList.Add(TimeSpan.Parse(timeSpanString));
+                }
+                else
+                {
+                    throw new JsonSerializationException("Invalid TimeSpan format in list");
+                }
+            }
+            return timeSpanList;
+        }
+
+        throw new JsonSerializationException("Expected an array of TimeSpan strings");
     }
 }
